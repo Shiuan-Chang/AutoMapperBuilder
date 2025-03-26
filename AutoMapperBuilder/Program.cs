@@ -20,14 +20,16 @@ namespace AutoMapperBuilder
                 new Source {Name = "Teddy", idNumber = 03 , score = 99}
             };
 
-            IEnumerable<Destination> DestinationList = Mapper.Map<Destination, Source>(sourceDataList);
+            var mappedList = (List<Destination>)Map<Destination, Source>(sourceDataList);
 
-            foreach (var destination in DestinationList)
+            //IEnumerable<Destination> DestinationList = Mapper.Map<Destination, Source>(sourceDataList);
+
+            foreach (var destination in mappedList)
             {
                 Console.WriteLine($"Name: {destination.Name}, idNumber: {destination.idNumber}, score:{destination.score}");
             }
 
-            Console.WriteLine(DestinationList);
+            Console.WriteLine(mappedList);
         }
     }
 }
