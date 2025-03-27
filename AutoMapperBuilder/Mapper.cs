@@ -10,14 +10,18 @@ namespace AutoMapperBuilder
 {
     public static class Mapper
     {
-        public static object Map<TDestination, TSource>(object source) where TDestination : new() //
+        public static TDestination Map<TDestination, TSource>(TSource source) where TDestination : new()
         {
-            var list = (IEnumerable<TSource>)source; 
+            return (TDestination)RecursiveMap(typeof(TSource), source, typeof(TDestination));
+        }
 
+       
+        public static List<TDestination> Map<TDestination, TSource>(IEnumerable<TSource> sourceList) where TDestination : new()
+        {
             var result = new List<TDestination>();
-            foreach (var item in list)
+            foreach (var item in sourceList)
             {
-                result.Add((TDestination)RecursiveMap(typeof(TSource), item, typeof(TDestination)));
+                result.Add(Map<TDestination, TSource>(item));
             }
             return result;
         }
@@ -40,7 +44,6 @@ namespace AutoMapperBuilder
 
                 var destPropType = destProp.PropertyType;
 
-                // 如果是 string 以外的 class，就遞迴
                 if (destPropType.IsClass && destPropType != typeof(string))
                 {
                     var nestedValue = RecursiveMap(srcProp.PropertyType, srcValue, destPropType);
@@ -53,6 +56,7 @@ namespace AutoMapperBuilder
                         destProp.SetValue(dest, convertedValue);
                 }
             }
+
             return dest;
         }
 
