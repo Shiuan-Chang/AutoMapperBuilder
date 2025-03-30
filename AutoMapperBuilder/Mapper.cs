@@ -10,12 +10,13 @@ namespace AutoMapperBuilder
 {
     public static class Mapper
     {
+        
         public static TDestination Map<TDestination, TSource>(TSource source) where TDestination : new()
         {
             return (TDestination)RecursiveMap(typeof(TSource), source, typeof(TDestination));
         }
 
-       
+
         public static List<TDestination> Map<TDestination, TSource>(IEnumerable<TSource> sourceList) where TDestination : new()
         {
             var result = new List<TDestination>();
@@ -25,91 +26,77 @@ namespace AutoMapperBuilder
             }
             return result;
         }
+
         private static object RecursiveMap(Type srcType, object source, Type destType)
         {
             if (source == null) return null;
 
-            var srcProps = srcType.GetProperties().ToDictionary(p => p.Name, p => p);
-            var dest = Activator.CreateInstance(destType);
+            var srcProps = srcType.GetProperties().ToDictionary(p => p.Name, p => p);//得到的屬性加到dic中，key值為屬性名稱，value值為屬性類型，如："Name": PropertyInfo,"Age": PropertyInfo,
+            var dest = Activator.CreateInstance(destType); //等同於new一個dest出來，會含有dest裡面所有的預設欄位
             var destProps = destType.GetProperties();
 
             foreach (var destProp in destProps)
             {
+                // src找不到對應屬性名稱，就跳過
                 if (!srcProps.TryGetValue(destProp.Name, out var srcProp))
                     continue;
 
+                // src中取出對應屬性的值，如果是 null 就跳過
                 var srcValue = srcProp.GetValue(source);
                 if (srcValue == null)
                     continue;
 
                 var destPropType = destProp.PropertyType;
 
-                if (destPropType.IsClass && destPropType != typeof(string))
+                // 當屬性是「巢狀類別」時（如Destination 和 Source兩個裡面設有多個變數），就遞迴地去複製它裡面的內容。
+                if (destPropType.IsClass && destPropType != typeof(string)) 
                 {
                     var nestedValue = RecursiveMap(srcProp.PropertyType, srcValue, destPropType);
                     destProp.SetValue(dest, nestedValue);
                 }
                 else
                 {
-                        var targetType = Nullable.GetUnderlyingType(destPropType) ?? destPropType;
-                        var convertedValue = Convert.ChangeType(srcValue, targetType);
-                        destProp.SetValue(dest, convertedValue);
+                    // 處理 Nullable<T> 類型（例如 int?）時會先還原成原始型別。
+                    var targetType = Nullable.GetUnderlyingType(destPropType) ?? destPropType;
+                    // 再透過 Convert.ChangeType 轉換型別（例如從 int 轉 double，亦即把source的值轉變成dest要的型別
+                    var convertedValue = ConvertToType(srcValue, targetType);
+                    // 設定到目標物件的屬性中
+                    destProp.SetValue(dest, convertedValue);
                 }
             }
-
-            return dest;
+            return dest;//以destyp為準創立的instance
         }
 
+        private static object ConvertToType(object value, Type targetType)
+        {
+            if (value == null) return null;
 
-        //public static IEnumerable<TDestination> Map<TDestination, TSource>(IEnumerable<TSource> sources) where TDestination:new() // where TDestination : new() 限制 TDestination 必須有 無參數建構函式（default constructor），才能在程式中使用 new TDestination() 建立物件實體。
-        //{
-        //    //可以物件對物件(object)，不一定要是inumbrable
-        //    // 只有欄位名稱相同可轉，類型可能不是同一個，但還是能轉(先不要管轉換欄位名字一不一樣)
-        //    // 型別互轉，不要用convert直接轉，外層要先去寫判斷邏輯，再把convert放到裡面處理
+            Type nonNullableType = Nullable.GetUnderlyingType(targetType) ?? targetType;
 
-        //    List<TDestination> result = new List<TDestination>();
+                if (nonNullableType == typeof(int))
+                    return Convert.ToInt32(value);
+                if (nonNullableType == typeof(long))
+                    return Convert.ToInt64(value);
+                if (nonNullableType == typeof(float))
+                    return Convert.ToSingle(value);
+                if (nonNullableType == typeof(double))
+                    return Convert.ToDouble(value);
+                if (nonNullableType == typeof(decimal))
+                    return Convert.ToDecimal(value);
+                if (nonNullableType == typeof(bool))
+                    return Convert.ToBoolean(value);
+                if (nonNullableType == typeof(DateTime))
+                    return Convert.ToDateTime(value);
+                if (nonNullableType == typeof(Guid))
+                    return Guid.Parse(value.ToString());
+                if (nonNullableType.IsEnum)
+                    return Enum.Parse(nonNullableType, value.ToString());
+                if (nonNullableType == typeof(string))
+                    return value.ToString();
 
-        //    PropertyInfo[] destionationProperties = typeof(TDestination).GetProperties();
-        //    PropertyInfo[] sourceProperties= typeof(TSource).GetProperties();
+                return Convert.ChangeType(value, nonNullableType);
+            }     
+        }    
+    
 
-        //    foreach(var data in sources) // 對來源資料去做foreach，透過反射得到property後得到property的值獲取source資料
-        //    {
-        //        TDestination destination = new TDestination(); // 無參數建構函式（default constructor）
-        //        foreach (var source in sourceProperties) 
-        //        {
-        //            var destinationProp = destionationProperties.FirstOrDefault(p => p.Name == source.Name && p.PropertyType == source.PropertyType);
-        //            if (destinationProp != null)
-        //            {
-
-        //                destinationProp.SetValue(destination, source.GetValue(data));
-        //            }
-        //        }
-        //        result.Add(destination);
-        //    }
-        //     return result;
-        //}
-
-
-
-
-    }
 }
-//List<TDestination> result = new List<TDestination>();
-//PropertyInfo[] destinationProperties = typeof(TDestination).GetProperties();
-//PropertyInfo[] sourceProperties = typeof(TSource).GetProperties();
-
-//foreach (var source in sources)
-//{
-//    TDestination destination = new TDestination();
-//    foreach (var sourceProp in sourceProperties)
-//    {
-//        var destProp = destinationProperties.FirstOrDefault(p => p.Name == sourceProp.Name && p.PropertyType == sourceProp.PropertyType);
-//        if (destProp != null && destProp.CanWrite)
-//        {
-//            destProp.SetValue(destination, sourceProp.GetValue(source));
-//        }
-//    }
-//    result.Add(destination);
-//}
-
-//return result;
