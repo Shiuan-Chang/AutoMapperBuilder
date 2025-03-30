@@ -31,41 +31,65 @@ namespace AutoMapperBuilder
         {
             if (source == null) return null;
 
-            var srcProps = srcType.GetProperties().ToDictionary(p => p.Name, p => p);//得到的屬性加到dic中，key值為屬性名稱，value值為屬性類型，如："Name": PropertyInfo,"Age": PropertyInfo,
-            var dest = Activator.CreateInstance(destType); //等同於new一個dest出來，會含有dest裡面所有的預設欄位
+            // 處理 List<T> 或 T[] 的巢狀集合
+            if (typeof(System.Collections.IEnumerable).IsAssignableFrom(srcType) && srcType != typeof(string))
+            {
+                // 取得 source 裡每個元素的型別
+                var srcElementType = srcType.IsArray ? srcType.GetElementType() : srcType.GetGenericArguments().FirstOrDefault();
+                var destElementType = destType.IsArray ? destType.GetElementType() : destType.GetGenericArguments().FirstOrDefault();
+
+                if (srcElementType != null && destElementType != null)
+                {
+                    var listType = typeof(List<>).MakeGenericType(destElementType);
+                    var destList = (System.Collections.IList)Activator.CreateInstance(listType);
+
+                    foreach (var item in (System.Collections.IEnumerable)source)
+                    {
+                        var mappedItem = RecursiveMap(srcElementType, item, destElementType);
+                        destList.Add(mappedItem);
+                    }
+
+                    // 如果目標是 Array，就轉成陣列
+                    if (destType.IsArray)
+                    {
+                        var toArrayMethod = listType.GetMethod("ToArray");
+                        return toArrayMethod.Invoke(destList, null);
+                    }
+
+                    return destList;
+                }
+            }
+
+            var srcProps = srcType.GetProperties().ToDictionary(p => p.Name, p => p);
+            var dest = Activator.CreateInstance(destType);
             var destProps = destType.GetProperties();
 
             foreach (var destProp in destProps)
             {
-                // src找不到對應屬性名稱，就跳過
                 if (!srcProps.TryGetValue(destProp.Name, out var srcProp))
                     continue;
 
-                // src中取出對應屬性的值，如果是 null 就跳過
                 var srcValue = srcProp.GetValue(source);
                 if (srcValue == null)
                     continue;
 
                 var destPropType = destProp.PropertyType;
 
-                // 當屬性是「巢狀類別」時（如Destination 和 Source兩個裡面設有多個變數），就遞迴地去複製它裡面的內容。
-                if (destPropType.IsClass && destPropType != typeof(string)) 
+                if (destPropType.IsClass && destPropType != typeof(string))
                 {
                     var nestedValue = RecursiveMap(srcProp.PropertyType, srcValue, destPropType);
                     destProp.SetValue(dest, nestedValue);
                 }
                 else
                 {
-                    // 處理 Nullable<T> 類型（例如 int?）時會先還原成原始型別。
                     var targetType = Nullable.GetUnderlyingType(destPropType) ?? destPropType;
-                    // 再透過 Convert.ChangeType 轉換型別（例如從 int 轉 double，亦即把source的值轉變成dest要的型別
                     var convertedValue = ConvertToType(srcValue, targetType);
-                    // 設定到目標物件的屬性中
                     destProp.SetValue(dest, convertedValue);
                 }
             }
-            return dest;//以destyp為準創立的instance
+            return dest;
         }
+
 
         private static object ConvertToType(object value, Type targetType)
         {
@@ -97,6 +121,4 @@ namespace AutoMapperBuilder
                 return Convert.ChangeType(value, nonNullableType);
             }     
         }    
-    
-
 }

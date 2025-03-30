@@ -10,6 +10,6 @@ namespace AutoMapperBuilder
     {
         public string Name { get; set; }
         public int idNumber { get; set; }
-        public int score { get; set; }
+        public List<Grade> Grades { get; set; }
     }
 }

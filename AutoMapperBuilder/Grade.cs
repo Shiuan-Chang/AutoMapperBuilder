@@ -6,11 +6,10 @@ using System.Threading.Tasks;
 
 namespace AutoMapperBuilder
 {
-    public class Source
+    public class Grade
     {
-        public string Name { get; set; }
-        public int idNumber { get; set; }
-        public List<Grade> Grades { get; set; }
+        public string Subject { get; set; }
+        public int score { get; set; }
 
     }
 }

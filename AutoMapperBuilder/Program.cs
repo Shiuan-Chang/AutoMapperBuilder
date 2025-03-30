@@ -13,12 +13,37 @@ namespace AutoMapperBuilder
     {
         static void Main(string[] args)
         {
-            List<Source> sourceDataList = new List<Source> 
+            List<Source> sourceDataList = new List<Source>
             {
-                new Source {Name = "John", idNumber = 01 , score = 100},
-                new Source {Name = "Cindy", idNumber = 02 , score = 96},
-                new Source {Name = "Teddy", idNumber = 03 , score = 99}
-            };
+                new Source
+                {
+                    Name = "John",
+                    idNumber = 1,
+                    Grades = new List<Grade>
+                    {
+                        new Grade { Subject = "Math", score = 100 }
+                    }
+                },
+                new Source
+                {
+                    Name = "Cindy",
+                    idNumber = 2,
+                    Grades = new List<Grade>
+                    {
+                        new Grade { Subject = "Math", score = 96 }
+                    }
+                },
+                new Source
+                {
+                    Name = "Teddy",
+                    idNumber = 3,
+                    Grades = new List<Grade>
+                    {
+                        new Grade { Subject = "Math", score = 99 }
+                    }
+                }
+};
+
 
             var mappedList = (List<Destination>)Map<Destination, Source>(sourceDataList);
 
@@ -26,7 +51,14 @@ namespace AutoMapperBuilder
 
             foreach (var destination in mappedList)
             {
-                Console.WriteLine($"Name: {destination.Name}, idNumber: {destination.idNumber}, score:{destination.score}");
+                Console.WriteLine($"Name: {destination.Name}, idNumber: {destination.idNumber}");
+
+                foreach (var grade in destination.Grades)
+                {
+                    Console.WriteLine($"  Subject: {grade.Subject}, Score: {grade.score}");
+                }
+
+                Console.WriteLine(); // 空行分隔每個人
             }
 
             Console.WriteLine(mappedList);
