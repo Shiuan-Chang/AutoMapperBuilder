@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AutoMapperBuilder.Factories
 {
-    internal class IntMapping : MappingBase
+    internal class Int32Mapping : MappingBase
     {
         public override object Map(Type srcType, object source, Type destType, Func<Type, object, Type, object> mappingFunc)
         {

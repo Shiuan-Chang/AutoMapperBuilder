@@ -40,7 +40,6 @@ namespace AutoMapperBuilder.Mapping
             var srcProps = srcType.GetProperties().ToDictionary(p => p.Name, p => p);//p => p.Name：把屬性名稱當成Key，p => p：整個 PropertyInfo 當成Value
             var dest = Activator.CreateInstance(destType);
             var destPropInfos = destType.GetProperties().ToList();
-            IMappingFactory mappingFactory = new MappingFactory();
             foreach (var destProp in destPropInfos)
             {
                 if (!srcProps.TryGetValue(destProp.Name, out var srcProp))
@@ -51,13 +50,17 @@ namespace AutoMapperBuilder.Mapping
                 // 取得要轉換的目標type tag
                 MappingTag mappingTag = ConvertType(destProp.PropertyType);
                 // 依照type tag取得Mapping實作
-                MappingBase mapping = mappingFactory.CreateMapping(mappingTag);
+                string typeName = $"AutoMapperBuilder.Factories.{mappingTag}Mapping";
+                Type mappingType = Type.GetType(typeName);
+
+                if (mappingType == null)
+                    throw new InvalidOperationException($"找不到對應的 Mapping 類別: {typeName}");
+
+                MappingBase mapping = (MappingBase)Activator.CreateInstance(mappingType);
                 // 將src的值轉為dest的型別
                 object destValue = mapping.Map(srcProp.PropertyType, srcValue, destProp.PropertyType, RecursiveMap);
                 // 設定dest的值
                 destProp.SetValue(dest, destValue);
-
-
             }
             return dest;
         }

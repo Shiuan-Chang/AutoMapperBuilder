@@ -9,14 +9,14 @@ using AutoMapperBuilder.Interface;
 
 namespace AutoMapperBuilder.Factories
 {
-    internal class MappingFactory : IMappingFactory
+    internal class MappingOption
     {
-            public MappingBase CreateMapping(MappingTag mappingTag)
+            public static MappingBase CreateMapping(MappingTag mappingTag)
             {
                 switch (mappingTag)
                 {
                     case MappingTag.Int32:
-                        return new IntMapping();
+                        return new Int32Mapping();
                     case MappingTag.Int64:
                         return new LongMapping();
                     case MappingTag.Single:
