@@ -8,7 +8,7 @@ namespace AutoMapperBuilder
 {
     public class Destination
     {
-        public string Name { get; set; }
+        public string studentName { get; set; }
         public int idNumber { get; set; }
         public List<Grade> Grades { get; set; }
     }

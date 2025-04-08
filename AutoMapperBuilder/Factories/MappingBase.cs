@@ -8,6 +8,10 @@ namespace AutoMapperBuilder.Factories
 {
     public abstract class MappingBase
     {
-        public abstract object Map(Type srcType, object source, Type destType, Func<Type, object, Type, object> mappingFunc);
+        public abstract object Map(
+        Type srcType,
+        object srcValue,
+        Type destType,
+        Func<Type, object, Type, object> recursiveMap);
     }
 }

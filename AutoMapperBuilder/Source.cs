@@ -8,8 +8,8 @@ namespace AutoMapperBuilder
 {
     public class Source
     {
-        public string Name { get; set; }
-        public int idNumber { get; set; }
+        public string registerName { get; set; }
+        public int Number { get; set; }
         public List<Grade> Grades { get; set; }
 
     }
