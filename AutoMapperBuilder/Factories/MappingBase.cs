@@ -8,7 +8,7 @@ namespace AutoMapperBuilder.Factories
 {
     public abstract class MappingBase
     {
-        public abstract object Map(
+        public abstract object Map( // 抽象可以做到不一定要實作，建造者模式通常採用
         Type srcType,
         object srcValue,
         Type destType,

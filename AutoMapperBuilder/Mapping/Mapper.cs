@@ -14,16 +14,16 @@ using System.Linq.Expressions;
 
 namespace AutoMapperBuilder.Mapping
 {
-    public class Mapper 
+    public class Mapper
     {
         // 考慮Destination只有一個欄位時
-        public static TDestination Map<TDestination, TSource>(TSource source,PropertyMap<TSource, TDestination> propertyMap = null) where TDestination : new()
+        public static TDestination Map<TDestination, TSource>(TSource source, PropertyMap<TSource, TDestination> propertyMap = null) where TDestination : new()
         {
             return (TDestination)RecursiveMap(typeof(TSource), source, typeof(TDestination), propertyMap);
         }
 
         // 考慮Destination有多個欄位時
-        public static List<TDestination> Map<TDestination, TSource>(IEnumerable<TSource> sourceList,    PropertyMap<TSource, TDestination> propertyMap) where TDestination : new()
+        public static List<TDestination> Map<TDestination, TSource>(IEnumerable<TSource> sourceList, PropertyMap<TSource, TDestination> propertyMap) where TDestination : new()
         {
             var result = new List<TDestination>();
             foreach (var item in sourceList)
