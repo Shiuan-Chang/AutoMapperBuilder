@@ -11,6 +11,7 @@ using AutoMapperBuilder.Enums;
 using AutoMapperBuilder.Factories;
 using AutoMapperBuilder.Mapping;
 using System.Linq.Expressions;
+using AutoMapperBuilder.ExpressionCatagories;
 
 namespace AutoMapperBuilder.Mapping
 {
@@ -40,28 +41,48 @@ namespace AutoMapperBuilder.Mapping
 
             var srcProps = srcType.GetProperties().ToDictionary(p => p.Name, p => p);
             var dest = Activator.CreateInstance(destType);
-            var destProps = destType.GetProperties();
+            var destProps = destType.GetProperties().ToDictionary(p => p.Name, p => p);
 
+            // 取出 mapping dict（若有指定 PropertyMap）
             Dictionary<string, string> mapDict = null;
+            Dictionary<string, ExpressionInfo> srcExprInfoDict = null;
             if (propertyMap != null)
             {
-                var field = propertyMap.GetType().GetProperty("MappingDict");
-                mapDict = (Dictionary<string, string>)field.GetValue(propertyMap);
+                var mapDictProp = propertyMap.GetType().GetProperty("MappingDict");
+                var exprDictProp = propertyMap.GetType().GetProperty("SourceExpressionInfoDict");
+
+                mapDict = (Dictionary<string, string>)mapDictProp?.GetValue(propertyMap);
+                srcExprInfoDict = (Dictionary<string, ExpressionInfo>)exprDictProp?.GetValue(propertyMap);
             }
 
-            foreach (var destProp in destProps)
+            foreach (var destProp in destProps.Values)
             {
                 string srcPropName = destProp.Name;
 
                 if (mapDict != null && mapDict.TryGetValue(destProp.Name, out var mappedName))
-                {
                     srcPropName = mappedName;
+
+                object srcValue = null;
+                Type srcValueType = null;
+
+               
+                if (srcExprInfoDict != null &&
+                    srcExprInfoDict.TryGetValue(destProp.Name, out var exprInfo) &&
+                    exprInfo.Getter != null)
+                {
+                    srcValue = exprInfo.Getter(source);
+                    srcValueType = srcValue?.GetType() ?? destProp.PropertyType;
+                }
+                else
+                {
+                  
+                    if (!srcProps.TryGetValue(srcPropName, out var srcProp))
+                        continue;
+
+                    srcValue = srcProp.GetValue(source);
+                    srcValueType = srcProp.PropertyType;
                 }
 
-                if (!srcProps.TryGetValue(srcPropName, out var srcProp))
-                    continue;
-
-                var srcValue = srcProp.GetValue(source);
                 if (srcValue == null)
                     continue;
 
@@ -70,10 +91,10 @@ namespace AutoMapperBuilder.Mapping
                 Type mappingType = Type.GetType(typeName);
                 MappingBase mapping = (MappingBase)Activator.CreateInstance(mappingType);
 
-                var recursive = (Type a, object b, Type c) => RecursiveMap(a, b, c, propertyMap);
+                var recursive = (Type a, object b, Type c) => RecursiveMap(a, b, c, null);
 
                 var destValue = mapping.Map(
-                    srcProp.PropertyType,
+                    srcValueType,
                     srcValue,
                     destProp.PropertyType,
                     recursive
@@ -89,6 +110,8 @@ namespace AutoMapperBuilder.Mapping
         {
             if (type.IsEnum)
                 return MappingTag.Enum;
+            if (type == typeof(bool))
+                return MappingTag.Boolean;
             if (typeof(IEnumerable).IsAssignableFrom(type) && type != typeof(string))
                 return MappingTag.Enumerable;
             if (type.IsClass && type != typeof(string))

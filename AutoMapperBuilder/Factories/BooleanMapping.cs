@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AutoMapperBuilder.Factories
 {
-    internal class BoolMapping : MappingBase
+    internal class BooleanMapping : MappingBase
     {
         public override object Map(Type srcType, object source, Type destType, Func<Type, object, Type, object> mappingFunc)
         {

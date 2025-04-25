@@ -9,11 +9,19 @@ namespace AutoMapperBuilder.ExpressionCatagories
 {
     public class ConstantExpressionInspector : ExpressionInspector
     {
-        public override bool canHandle(Expression expression) => expression is ConstantExpression;
-        public override ExpressionInfo check(Expression expression)
+        // ConstantExpression //常數，查找固定不變的值
+        public override bool canHandle(Expression expr) => expr is ConstantExpression;
+
+        public override ExpressionInfo check(Expression expr)
         {
-            var ce = (ConstantExpression)expression;
-            return new ExpressionInfo { expressionType = "Constant", detail = ce.Value?.ToString() ?? "null", expression = ce };
+            var ce = (ConstantExpression)expr;
+            return new ExpressionInfo
+            {
+                Name = ce.Value?.ToString() ?? "null",
+                ExpressionType = "Constant",
+                Detail = ce.Value?.ToString() ?? "null",
+                Expression = ce
+            };
         }
     }
 }
